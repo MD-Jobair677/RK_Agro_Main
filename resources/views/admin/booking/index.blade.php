@@ -17,6 +17,7 @@
                                 <th class="text-center">@lang('Delivery Location')</th>
                                 <th class="text-center">@lang('Price')</th>
                                 <th class="text-center">@lang('Actions')</th>
+                                <th class="text-center">@lang('status')</th>
                             </tr>
                         </thead>
                         <tbody class="table-border-bottom-0">
@@ -36,56 +37,68 @@
                                     @if ($item->status == 1)
                                         <td class="text-center">
                                             <div class="btn-group">
-                                                <button class="btn btn-sm btn-label-primary dropdown-toggle" type="button"
-                                                    data-bs-toggle="dropdown"
-                                                    aria-expanded="false">@lang('Action')</button>
-                                                <ul class="dropdown-menu">
-                                                    <li>
-                                                        <a class="dropdown-item"
-                                                            href="{{ route('admin.booking.edit', $item->id) }}"
-                                                            class="btn btn-sm btn-warning">
-                                                            <span class="tf-icons las la-pen me-1"></span>
-                                                            @lang('Edit')
-                                                        </a>
-                                                    </li>
-                                                    <li>
-                                                        <a class="dropdown-item"
-                                                            href="{{ route('admin.booking.view', $item->id) }}"
-                                                            class="btn btn-sm btn-info"><span
-                                                                class="tf-icons las la-eye me-1"></span>
-                                                            @lang('View')
-                                                        </a>
-                                                    </li>
-                                                    <li>
-                                                        <a class="dropdown-item"
-                                                            href="{{ route('admin.booking.payment.list', $item->id) }}"
-                                                            class="btn btn-sm btn-info">
-                                                            <span class="tf-icons las la-money-bill-wave me-1"></span>
-                                                            @lang('Payment')
-                                                        </a>
-                                                    </li>
-                                                    <li>
-                                                        <a href="javascript:void(0)" class="dropdown-item delete"
-                                                            data-id="{{ $item->id }}">
-                                                            <span class="las la-trash fs-6 link-danger"></span>
-                                                            @lang('Delete')
-                                                        </a>
-                                                    </li>
 
 
-                                                    <div>
+
+                                                @if ($item->booking_status == 'cancel')
+                                                    <!-- Show Undo button if cancelled -->
+                                                    <button class="btn btn-sm btn-warning undoBookingBtn"
+                                                        data-id="{{ $item->id }}">
+                                                        @lang('Undo')
+                                                    </button>
+                                                @else
+                                                    <button class="btn btn-sm btn-label-primary dropdown-toggle"
+                                                        type="button" data-bs-toggle="dropdown" aria-expanded="false"
+                                                        {{ $item->booking_status == 'cancel' ? 'disabled' : '' }}>
+                                                        @lang('Action')
+                                                    </button>
+                                                    <ul class="dropdown-menu">
+                                                        <li>
+                                                            <a class="dropdown-item"
+                                                                href="{{ route('admin.booking.edit', $item->id) }}"
+                                                                class="btn btn-sm btn-warning">
+                                                                <span class="tf-icons las la-pen me-1"></span>
+                                                                @lang('Edit')
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a class="dropdown-item"
+                                                                href="{{ route('admin.booking.view', $item->id) }}"
+                                                                class="btn btn-sm btn-info"><span
+                                                                    class="tf-icons las la-eye me-1"></span>
+                                                                @lang('View')
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a class="dropdown-item"
+                                                                href="{{ route('admin.booking.payment.list', $item->id) }}"
+                                                                class="btn btn-sm btn-info">
+                                                                <span class="tf-icons las la-money-bill-wave me-1"></span>
+                                                                @lang('Payment')
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="javascript:void(0)" class="dropdown-item delete"
+                                                                data-id="{{ $item->id }}">
+                                                                <span class="las la-trash fs-6 link-danger"></span>
+                                                                @lang('Delete')
+                                                            </a>
+                                                        </li>
 
 
-                                                        <form id="delete-form-{{ $item->id }}"
-                                                            action="{{ route('admin.booking.delete.booking', $item->id) }}"
-                                                            method="POST" style="display:none;">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                        </form>
-                                                    </div>
+                                                        <div>
 
 
-{{-- 
+                                                            <form id="delete-form-{{ $item->id }}"
+                                                                action="{{ route('admin.booking.delete.booking', $item->id) }}"
+                                                                method="POST" style="display:none;">
+                                                                @csrf
+                                                                @method('DELETE')
+                                                            </form>
+                                                        </div>
+
+
+                                                        {{-- 
                                                     @php
                                                         dd($item->sale_price,$item->total_payment_amount);
                                                     @endphp --}}
@@ -93,27 +106,30 @@
 
 
 
-                                                    @if ($item->sale_price < $item->total_payment_amount)
-                                                        <li>
-                                                            <a class="dropdown-item"
-                                                                href="{{ route('admin.booking.refund.payment', $item->id) }}"
-                                                                class="btn btn-sm btn-info">
-                                                                <span class="tf-icons las la-money-bill-wave me-1"></span>
-                                                                @lang('Refund')
-                                                            </a>
-                                                        </li>
-                                                    @endif
-                                                    @if ($item->sale_price <= $item->total_payment_amount)
-                                                        <li>
-                                                            <a class="dropdown-item"
-                                                                href="{{ route('admin.booking.delivery.print', $item->id) }}"
-                                                                class="btn btn-sm btn-warning">
-                                                                <span class="tf-icons las la-print me-1"></span>
-                                                                @lang('Print')
-                                                            </a>
-                                                        </li>
-                                                    @endif
-                                                </ul>
+                                                        @if ($item->sale_price < $item->total_payment_amount)
+                                                            <li>
+                                                                <a class="dropdown-item"
+                                                                    href="{{ route('admin.booking.refund.payment', $item->id) }}"
+                                                                    class="btn btn-sm btn-info">
+                                                                    <span
+                                                                        class="tf-icons las la-money-bill-wave me-1"></span>
+                                                                    @lang('Refund')
+                                                                </a>
+                                                            </li>
+                                                        @endif
+                                                        @if ($item->sale_price <= $item->total_payment_amount)
+                                                            <li>
+                                                                <a class="dropdown-item"
+                                                                    href="{{ route('admin.booking.delivery.print', $item->id) }}"
+                                                                    class="btn btn-sm btn-warning">
+                                                                    <span class="tf-icons las la-print me-1"></span>
+                                                                    @lang('Print')
+                                                                </a>
+                                                            </li>
+                                                        @endif
+                                                    </ul>
+                                                @endif
+
                                             </div>
                                         </td>
                                     @elseif($item->status == 3)
@@ -131,7 +147,24 @@
                                             </a>
                                         </td>
                                     @endif
+
+
+                                    <td class="text-center">
+                                        <button
+                                            class="btn btn-sm 
+    {{ $item->booking_status == 'cancel' ? 'btn-danger' : 'btn-success' }} 
+    cancelBookingBtn"
+                                            data-id="{{ $item->id }}">
+
+                                            {{ $item->booking_status == 'cancel' ? __('Canceled') : __('Cancel') }}
+                                        </button>
+
+                                    </td>
+
                                 </tr>
+
+
+
                             @empty
                                 <tr>
                                     <td colspan="100%" class="text-center">{{ __($emptyMessage) }}</td>
@@ -177,5 +210,84 @@
                 }
             });
         });
+
+
+
+        $(document).ready(function() {
+            $('.cancelBookingBtn').click(function(e) {
+                e.preventDefault();
+
+                var bookingId = $(this).data('id');
+                var button = $(this);
+
+                if (!confirm('Are you sure you want to cancel this booking?')) return;
+
+                $.ajax({
+                    url: "{{ route('admin.booking.cancel') }}",
+                    method: 'POST',
+                    data: {
+                        booking_id: bookingId,
+                        _token: "{{ csrf_token() }}"
+                    },
+                    success: function(res) {
+                        if (res.success) {
+                            //     alert(res.message);
+                            // console.log(res.message);
+
+                            // Optional: change button text or color
+                             location.reload();
+                            
+                        }
+                    },
+                    error: function(err) {
+                        alert('Something went wrong!');
+                    }
+                });
+            });
+        });
+
+
+
+
+
+
+
+
+
+
+
+        $(document).ready(function(){
+
+    $('.undoBookingBtn').click(function(e){
+        e.preventDefault();
+
+        var button = $(this);
+        var bookingId = button.data('id');
+
+        if(!confirm('Are you sure you want to undo cancel?')) return;
+
+        $.ajax({
+            url: "{{ route('admin.booking.undo') }}",
+            type: 'POST',
+            data: {
+                booking_id: bookingId,
+                _token: "{{ csrf_token() }}"
+            },
+            success: function(res){
+                if(res.success){
+                 
+
+                    location.reload();
+                } else {
+                    alert(res.message);
+                }
+            },
+            error: function(err){
+                alert('Something went wrong!');
+            }
+        });
+    });
+
+});
     </script>
 @endpush

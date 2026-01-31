@@ -75,10 +75,10 @@ class BookingController extends Controller
             'ref_cont_number' => 'nullable|string',
             'booking_type'    => ['required', 'numeric', Rule::in([1, 2])],
             'payment_method'  => ['required', 'string'],
-            'delivery_date'   => ['required', 'date_format:d/m/Y'],
+            'delivery_date'   => ['required', 'date_format:m/d/Y'],
             'distric_city'    => ['required', 'string'],
             'area_location'   => ['required', 'string'],
-            'booking_date'    => ['required', 'date_format:d/m/Y'],
+            'booking_date'    => ['required', 'date_format:m/d/Y'],
         ], [
             'delivery_date.date'           => 'The delivery date must be a valid date.',
             'delivery_date.after_or_equal' => 'Delivery date cannot be in the past date.',
@@ -1000,10 +1000,67 @@ class BookingController extends Controller
 
 
 
+// =====================================Booking Cancel======================================//
+
+
+public function BookingCancel(Request $request)
+{
+    $bookingId = $request->input('booking_id');
+
+    // Booking find
+    $booking = Booking::findOrFail($bookingId);
+
+    // Check if already delivered (status = 2)
+    if ($booking->status === 2) {
+        return response()->json([
+            'success' => true,
+            'message' => 'Booking cannot be cancelled, it is already delivered.',
+            'status' => $booking->status,
+        ]);
+    }else{
+         // Update booking status to 'cancel'
+    $booking->booking_status = 'cancel';
+    $booking->save();
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Booking cancelled successfully.',
+        'status' => $booking->booking_status,
+    ]);
+
+    }
+
+   
+}
 
 
 
 
+public function undoBooking(Request $request)
+{
+    $request->validate([
+        'booking_id' => 'required|exists:bookings,id',
+    ]);
+
+    $booking = Booking::findOrFail($request->booking_id);
+
+    // Only allow undo if currently cancelled
+    if ($booking->booking_status != 'cancel') {
+        return response()->json([
+            'success' => false,
+            'message' => 'Booking is not cancelled.',
+        ]);
+    }
+
+    $booking->booking_status = 'active'; // undo cancel
+    $booking->save();
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Booking status changed to Active.',
+        'status' => $booking->booking_status,
+    ]);
+}
 
 
 

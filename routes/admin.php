@@ -185,6 +185,10 @@ Route::middleware('admin')->group(function () {
         Route::get('edit/{id}', 'edit')->name('edit');
         Route::post('update/{id}', 'update')->name('update');
         Route::delete('delete/booking/{id}', 'delete')->name('delete.booking');
+        Route::post('/bookings/cancel', 'BookingCancel')->name('cancel');
+    Route::post('/bookings/undo',  'undoBooking')->name('undo');
+
+
 
         Route::get('view/{id}', 'view')->name('view');
         Route::get('number-search', 'bookingNumberSearch')->name('number.search');

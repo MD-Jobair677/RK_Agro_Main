@@ -106,3 +106,11 @@ CREATE TABLE payment_receipts (
 
     CONSTRAINT fk_booking FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
+
+
+
+
+ALTER TABLE bookings
+ADD booking_status ENUM('active', 'cancel') NOT NULL DEFAULT 'active' AFTER status;
+ALTER TABLE payment_recipt
+
