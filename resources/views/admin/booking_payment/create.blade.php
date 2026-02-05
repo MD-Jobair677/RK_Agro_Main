@@ -8,7 +8,7 @@
                     @csrf
                     <input type="hidden" value="{{ $booking->id }}" name="booking_id">
                     <div class="row">
-                        <div class="col-lg-4 col-md-6 mb-3">
+                        <div class="col-lg-3 col-md-3 mb-3">
                             <div class="form-group">
                                 <label class="form-label required">@lang('Payment Date')</label>
                                 <input name="payment_date" id="datepicker" type="text" data-range="false"
@@ -19,7 +19,7 @@
 
 
 
-                        <div class="col-lg-4 col-md-6">
+                        <div class="col-lg-3 col-md-3">
                             <div class="form-group">
                                 <label class="form-label required">@lang('Cattle Name/number')</label>
 
@@ -35,9 +35,8 @@
                                                 <input class="form-check-input" type="checkbox" name="cattle_booking_ids[]"
                                                     value="{{ $cb->id }}" id="cattle{{ $cb->id }}">
 
-                                                <label class="form-check-label" for="cattle{{ $cb->id ." " . $cb->name  }}">
-                                                    {{ $cb->cattle->tag_number }}
-                                                </label>
+                                                <label class="form-check-label" for="cattle{{ $cb->id . ' ' . $cb->name }}">
+                                                    {{ optional($cb->cattle)->tag_number }} </label>
                                             </div>
                                         @endforeach
                                     </div>
@@ -48,10 +47,29 @@
                             </div>
                         </div>
 
+                        <div class="col-lg-3 col-md-3 mb-3">
+                            <div class="form-group mt-2">
+                                <label class="form-label required">@lang('Payment Method')</label>
+                                <select name="payment_method" class="form-control" required>
+                                    <option value="">-- @lang('Select Payment Method') --</option>
+                                    <option value="Cash" {{ old('payment_method') == 'Cash' ? 'selected' : '' }}>Cash
+                                    </option>
+                                    <option value="Bank" {{ old('payment_method') == 'Bank' ? 'selected' : '' }}>Bank
+                                    </option>
+                                    <option value="Bkash" {{ old('payment_method') == 'Bkash' ? 'selected' : '' }}>Bkash
+                                    </option>
+                                    <option value="Rocket" {{ old('payment_method') == 'Rocket' ? 'selected' : '' }}>Rocket
+                                    </option>
+                                    <option value="Nagad" {{ old('payment_method') == 'Nagad' ? 'selected' : '' }}>Nagad
+                                    </option>
+                                    <!-- আরো payment methods চাইলে এখানে add করতে পারো -->
+                                </select>
+                            </div>
+                        </div>
 
 
 
-                        <div class="col-lg-4 col-md-6">
+                        <div class="col-lg-3 col-md-3">
                             <div class="form-group">
                                 <label class="form-label required">@lang('Amount')</label>
 

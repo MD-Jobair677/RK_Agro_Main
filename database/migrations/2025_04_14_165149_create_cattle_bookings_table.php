@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('cattle_bookings', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger("cattle_id")->comment('Foreign key referencing cattle');
+            $table->unsignedBigInteger("cattle_id")->comment('Foreign key referencing cattle')->nullable();
             $table->unsignedBigInteger("customer_id")->comment('Foreign key referencing customer');
             $table->string("booking_number",100)->comment('Booking number');
             $table->tinyInteger('booking_type')->default(1)->comment('Booking type of the booking (1 for instant booking, 2 for eid booking)');

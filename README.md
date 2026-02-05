@@ -114,3 +114,4 @@ ALTER TABLE bookings
 ADD booking_status ENUM('active', 'cancel') NOT NULL DEFAULT 'active' AFTER status;
 ALTER TABLE payment_recipt
 
+ALTER TABLE `cattle_bookings`,'sale_price,advance price,CHANGE `cattle_id` `cattle_id` INT(10) UNSIGNED NULL;  akana payment_method add koa lagba

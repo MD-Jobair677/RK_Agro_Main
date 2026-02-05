@@ -55,17 +55,46 @@
                             @forelse ($paymentBooking as $item)
                                 <tr>
                                     <td class="text-center">{{ $loop->iteration }}</td>
-                                    <td class="text-center">{{ $item->cattle->tag_number.''.$item->cattle->cattle_name}} 
 
-           
 
+                                    <td class="text-center">
+                                        @if ($item->cattle)
+                                            {{ $item->cattle->tag_number . ' ' . $item->cattle->cattle_name }}
+                                        @else
+                                            {{ $item->cattle_name ?? 'N/A' }}
+                                        @endif
+                                    </td>
 
 
 
                                     </td>
                                     <td class="text-center">{{ $item->created_at }}</td>
-                                    <td class="text-center">{{ showAmount($item->sale_price) }}</td>
-                                    <td class="text-center">{{ showAmount($item->advance_price) }}</td>
+
+
+                                    <td class="text-center">
+
+                                        @if ($item->sale_price  )
+                                            {{ showAmount($item->sale_price) }}
+                                        @else
+                                            N/A
+                                        @endif
+
+
+
+
+
+                                    </td>
+                                    <td class="text-center">
+                                        @if ($item->advance_price)
+                                            {{ showAmount($item->advance_price) }}
+                                        @else
+                                            {{ showAmount($item->payment) }}
+                                        @endif
+
+
+
+                                    </td>
+
 
                                     <td class="text-center">
                                         <!-- Edit Button -->
@@ -95,6 +124,17 @@
                                             style="display:none;">
                                             @csrf
                                             <input type="hidden" name="booking_id" value="{{ $item->booking_id }}">
+
+
+                                      
+                                               <input type="hidden" name="payment_id"
+                                                value="{{ $item->id }}">
+                                        
+
+                                          
+
+
+
                                             {{-- <input type="hidden" name="comment" id="hidden-comment-{{ $item->id }}"> --}}
                                         </form>
                                     </td>

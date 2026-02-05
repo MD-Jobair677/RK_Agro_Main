@@ -57,7 +57,7 @@ class BookingController extends Controller
     function store(Request $request)
     {
 
-        // dd($request->all());
+      
         $request->validate([
             'customer_id'     => [
                 'required',
@@ -179,19 +179,24 @@ class BookingController extends Controller
 
 
             // -------------------------------------Cattle booking create-------------------------------------
-            foreach ($request->cattles as  $cattle) {
-                $cattleBooking = new CattleBooking();
-                $cattleBooking->cattle_id     = $cattle['cattle_id'];
-                $cattleBooking->booking_id    = $booking->id;
-                $cattleBooking->sale_price    = $cattle['sale_price'];
-                $cattleBooking->advance_price = $cattle['advance_price'];
-                $cattleBooking->save();
+           foreach ($request->cattles as $cattleData) {
 
+                        $countPaymentTime = CattleBooking::where('booking_id', $booking->id)
+                            ->where('cattle_id', $cattleData['cattle_id'])
+                            ->count() + 1;
 
-                $cattle = Cattle::findOrFail($cattle['cattle_id']);
-                $cattle->status = 2;
-                $cattle->save();
-            }
+                        $cattleBooking = new CattleBooking();
+                        $cattleBooking->cattle_id = $cattleData['cattle_id'];
+                        $cattleBooking->booking_id = $booking->id;
+                        $cattleBooking->sale_price = $cattleData['sale_price'];
+                        $cattleBooking->advance_price = $cattleData['advance_price'];
+                        $cattleBooking->count_payment_time = $countPaymentTime;
+                        $cattleBooking->save();
+
+                        $cattle = Cattle::findOrFail($cattleData['cattle_id']);
+                        $cattle->status = 2;
+                        $cattle->save();
+                    }
             // -------------------------------------End Cattle booking create-------------------------------------
 
 
@@ -531,9 +536,9 @@ class BookingController extends Controller
             ->paginate(getPaginate(30));
 //   dd($bookingPayments);
             $is_printed = PaymentReceipt::where('booking_id', $booking->id)->first()?'yes':'no';
-        $paymentBooking = CattleBooking::where('booking_id',  $booking ->id)->with(['cattle:id,tag_number'])->paginate(getPaginate(30));
-//   dd($paymentBooking);
-    // dd()
+                $paymentBooking = CattleBooking::where('booking_id',  $booking ->id)->with(['cattle:id,tag_number'])->paginate(getPaginate(30));
+                //  dd($paymentBooking);
+            // dd()
 
 
         return view('admin.booking_payment.index', compact('pageTitle', 'bookingPayments', 'booking','is_printed','paymentBooking'));
@@ -552,8 +557,8 @@ class BookingController extends Controller
     {
         $pageTitle = 'Add Payment';
        $booking = Booking::with([
-    'cattle_bookings.cattle:id,tag_number,name'
-])->findOrFail($id);
+                'cattle_bookings.cattle:id,tag_number,name'
+            ])->findOrFail($id);
 
 
 
@@ -565,16 +570,25 @@ class BookingController extends Controller
     {
 
     // dd($request->all());    
+
+
+
         $pageTitle = 'Create Payment';
         $booking = Booking::findOrFail($request->booking_id);
         // dd($booking);
         $request->validate([
             'booking_id'     => ['required', 'integer', 'exists:bookings,id'],
-            'cattle_name' => ['required', 'string', 'max:255'],
+           'cattle_booking_ids' => ['required', 'array'],
+           'payment_method' => ['required'],
             'amount' => ['required', 'regex:/^\d+(\.\d{1,2})?$/', 'min:0'],
            
         ]);
+    $count_time = CattleBooking::where('booking_id', $booking->id)
+    
+    ->latest('id')   // বা created_at
+    ->value('count_payment_time')+1;
 
+// dd($count_time);
         // Prevent overpayment
         $newTotalPayment = $booking->total_payment_amount + $request->amount;
         // dd($newTotalPayment);
@@ -584,12 +598,23 @@ class BookingController extends Controller
 
 
 
+        // Cattle Name 
+
+        $cattleBookingIds = $request->cattle_booking_ids;
+
+            $cattles = Cattle::whereIn('id', $cattleBookingIds)->select('tag_number')->get();
+            $tagNumbers = $cattles->pluck('tag_number');
+                    
+                
+            $tagNumberString = $tagNumbers->implode('/');
+
+
         $paymentDate = Carbon::createFromFormat('d/m/Y', $request->payment_date);
 
         $bookingPayment = new BookingPayment();
         $bookingPayment->cattle_booking_id = $booking->id;
         $bookingPayment->price = $request->amount;
-        $bookingPayment->cattle_name = $request->cattle_name;
+        $bookingPayment->cattle_name = $tagNumberString;
         $bookingPayment->payment_date = $paymentDate->toDateString();
         $bookingPayment->save();
 
@@ -598,6 +623,26 @@ class BookingController extends Controller
         $total_due = $booking->sale_price - $newTotalPayment;
         $booking->due_price = $total_due;
         $booking->save();
+
+
+
+
+      
+        $cattleBooking = new CattleBooking();
+   
+        $cattleBooking->booking_id    = $booking->id;
+            
+        $cattleBooking->payment =  $request->amount;
+        $cattleBooking->cattle_name =  $tagNumberString ;
+        $cattleBooking->count_payment_time =  $request->payment_method ;
+
+        $cattleBooking->save();
+
+
+
+
+
+
 
         $notifyAdd[] = ['success', "Booking Payment create successfully"];
         return back()->withToasts($notifyAdd);
@@ -931,11 +976,11 @@ class BookingController extends Controller
 
     function paymentSlip(Request $request, $id)
     {
-
-        // dd($id);
+ 
+      
         $request->validate([
             'booking_id' => 'required|exists:bookings,id',
-            // 'comment' => 'required|string|max:255',
+            // 'cattle_display_name' => 'required',
         ]);
 
         // dd($request->all());
@@ -950,6 +995,16 @@ class BookingController extends Controller
             $receptPayment = BookingPayment::with(['booking.delivery_location', 'booking.customer'])
                 ->findOrFail($request->booking_id);
 
+             $total_received = BookingPayment::where('cattle_booking_id', $request->booking_id)
+    ->sum('price');
+
+// dd($total_received);
+
+
+             $payment_price  = CattleBooking::find($request->payment_id);
+          
+
+
 
 
             $paymentReceipt = PaymentReceipt::updateOrCreate(
@@ -961,7 +1016,7 @@ class BookingController extends Controller
 
                 [
                     'payment_uid' => $UniqueID,
-                    'receipt_tk'  => $receptPayment->price,
+                    'receipt_tk'  => $payment_price->advance_price??$payment_price->payment,
                     'cattle_booking_id' => $id,
                     'comment'     => $request->comment ?? $receptPayment->cattle_name,
                     'printed_at'  => $request->printed_at ?? now(),
@@ -979,7 +1034,8 @@ class BookingController extends Controller
             // Generate PDF
             $pdf = Pdf::loadView('report.paymentReceipt', [
                 'paymentReceiptsData' => $paymentReceiptsData,
-                'inword' => $inword
+                'inword' => $inword,
+                'total_received' =>$total_received,
             ]);
 
             return $pdf->stream('payment_receipt.pdf');

@@ -164,9 +164,13 @@
                     <td class="line" colspan="3">{{ $paymentReceiptsData->receipt_tk ?? 'N/A' }}</td>
                 </tr>
                 <tr>
+                    <td class="label">TOTAL  AMOUNT RECEIVED :</td>
+                    <td class="line" colspan="3">{{ $total_received ?? 'N/A' }}</td>
+                </tr>
+                <tr>
                     <td class="label">DUE PRICE :</td>
                     <td class="line" colspan="3">
-                        {{ number_format($paymentReceiptsData->booking->sale_price - $paymentReceiptsData->receipt_tk, 2) }}
+                        {{ number_format($paymentReceiptsData->booking->due_price, 2) }}
                     </td>
                 </tr>
 
