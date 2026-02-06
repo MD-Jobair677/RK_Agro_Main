@@ -644,8 +644,9 @@ class BookingController extends Controller
         $cattleBooking->booking_id    = $booking->id;
             
         $cattleBooking->payment =  $request->amount;
-        $cattleBooking->cattle_name =  $tagNumberString ;
-        $cattleBooking->payment_method =  $request->payment_method ;
+        $cattleBooking->cattle_name =  $tagNumberString;
+        // dd($request->payment_method);
+        $cattleBooking->payment_method =  $request->payment_method;
 
         $cattleBooking->save();
 

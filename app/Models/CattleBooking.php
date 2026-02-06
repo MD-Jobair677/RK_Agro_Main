@@ -10,6 +10,10 @@ class CattleBooking extends Model
     use HasFactory;
 
 
+    protected $fillable = [
+        'payment_method'
+    ];
+
     public function cattle()
     {
         return $this->belongsTo(Cattle::class, 'cattle_id', 'id');

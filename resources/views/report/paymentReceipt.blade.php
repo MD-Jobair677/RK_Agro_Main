@@ -50,13 +50,13 @@
         }
 
         .receipt-no {
-            font-size: 22px;
+            font-size: 18px;
             font-weight: bold;
             font-size: 20px;
         }
 
         .receipt-title {
-            font-size: 20px;
+            font-size: 13px;
             font-weight: bold;
         }
 
@@ -81,7 +81,8 @@
 
         .label {
             font-weight: bold;
-            width: 140px;
+            width: 160px;
+            font-size: 10px
 
         }
 
@@ -205,7 +206,7 @@
                 <tr>
                     <td class="label">FOR :</td>
                     <td class="line" colspan="3">
-                        {{ $paymentReceiptsData->comment?? 'N/A' }}
+                        {{ $paymentReceiptsData->cattle_name?? 'N/A' }}
                     </td>
                 </tr>
             </table>
