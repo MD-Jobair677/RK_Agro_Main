@@ -57,6 +57,7 @@ class BookingController extends Controller
     function store(Request $request)
     {
 
+    // dd($request->all());
       
         $request->validate([
             'customer_id'     => [
@@ -181,16 +182,14 @@ class BookingController extends Controller
             // -------------------------------------Cattle booking create-------------------------------------
            foreach ($request->cattles as $cattleData) {
 
-                        $countPaymentTime = CattleBooking::where('booking_id', $booking->id)
-                            ->where('cattle_id', $cattleData['cattle_id'])
-                            ->count() + 1;
+                      
 
                         $cattleBooking = new CattleBooking();
                         $cattleBooking->cattle_id = $cattleData['cattle_id'];
                         $cattleBooking->booking_id = $booking->id;
                         $cattleBooking->sale_price = $cattleData['sale_price'];
                         $cattleBooking->advance_price = $cattleData['advance_price'];
-                        $cattleBooking->count_payment_time = $countPaymentTime;
+                        $cattleBooking->payment_method = $request->payment_method;
                         $cattleBooking->save();
 
                         $cattle = Cattle::findOrFail($cattleData['cattle_id']);
@@ -278,6 +277,8 @@ class BookingController extends Controller
 
 
 
+   
+
     function update(Request $request, $id)
     {
 
@@ -313,17 +314,13 @@ class BookingController extends Controller
             // -------------------------------------End booking create-------------------------------------
 
 
-           
             $newCattleIds = collect($request->cattles)->pluck('cattle_id')->map(fn($id) => (int) $id)->toArray();
-           
+            // dd($newCattleIds, $request->all());
 
-  
             $existingBookings = $booking->cattle_bookings()->get();
 
-         
             $existingCattleIds = $existingBookings->pluck('cattle_id')->toArray();
 
-          
             $toDelete = $existingBookings->whereNotIn('cattle_id', $newCattleIds);
             foreach ($toDelete as $bookingCattle) {
                 Cattle::findOrFail($bookingCattle->cattle_id)->update(['status' => 1]);
@@ -331,7 +328,7 @@ class BookingController extends Controller
             }
 
 
-      
+            // Step 5: Insert new cattle if they don't exist in DB
 
             $TotalSalesPrice = 0;
             foreach ($request->cattles as $newCattle) {
@@ -366,6 +363,7 @@ class BookingController extends Controller
             return back()->withToasts($toast);
         }
     }
+
 
     public function remove($id)
     {
@@ -583,13 +581,11 @@ class BookingController extends Controller
             'amount' => ['required', 'regex:/^\d+(\.\d{1,2})?$/', 'min:0'],
            
         ]);
-    $count_time = CattleBooking::where('booking_id', $booking->id)
-    
-    ->latest('id')   // বা created_at
-    ->value('count_payment_time')+1;
 
-// dd($count_time);
-        // Prevent overpayment
+    
+  
+
+
         $newTotalPayment = $booking->total_payment_amount + $request->amount;
         // dd($newTotalPayment);
         if ($newTotalPayment > $booking->sale_price) {
@@ -634,7 +630,7 @@ class BookingController extends Controller
             
         $cattleBooking->payment =  $request->amount;
         $cattleBooking->cattle_name =  $tagNumberString ;
-        $cattleBooking->count_payment_time =  $request->payment_method ;
+        $cattleBooking->payment_method =  $request->payment_method ;
 
         $cattleBooking->save();
 
