@@ -129,6 +129,23 @@
                                       
                                                <input type="hidden" name="payment_id"
                                                 value="{{ $item->id }}">
+
+                                                    <td class="text-center">
+                                        @if ($item->cattle)
+                                            {{ $item->cattle->tag_number . ' ' . $item->cattle->cattle_name }}
+
+                                             <input type="hidden" name="comment"
+                                                value=" {{ $item->cattle->tag_number . ' ' . $item->cattle->cattle_name }}">
+                                        @else
+
+                                         <input type="hidden" name="comment"
+                                                value="{{ $item->cattle_name }}">
+                                            
+                                        @endif
+                                    </td>
+
+
+
                                         
 
                                           

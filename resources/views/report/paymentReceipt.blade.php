@@ -206,7 +206,7 @@
                 <tr>
                     <td class="label">FOR :</td>
                     <td class="line" colspan="3">
-                        {{ $paymentReceiptsData->cattle_name?? 'N/A' }}
+                        {{ $paymentReceiptsData->comment?? 'N/A' }}
                     </td>
                 </tr>
             </table>

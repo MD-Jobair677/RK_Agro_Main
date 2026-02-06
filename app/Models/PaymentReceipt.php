@@ -17,6 +17,7 @@ class PaymentReceipt extends Model
         'comment',
         'printed_at',
         'cattle_booking_id'
+        
     ];
 
 

@@ -140,3 +140,15 @@
 #28 E:\\NexErp\\New folder\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\resources\\server.php(16): require_once('E:\\\\NexErp\\\\New f...')
 #29 {main}
 "} 
+[2026-02-06 17:46:13] local.ERROR: syntax error, unexpected single-quoted string "", expecting "]" {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): syntax error, unexpected single-quoted string \"\", expecting \"]\" at E:\\NexErp\\New folder\\app\\Models\\PaymentReceipt.php:20)
+[stacktrace]
+#0 {main}
+"} 
+[2026-02-06 17:46:13] local.ERROR: syntax error, unexpected single-quoted string "", expecting "]" {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): syntax error, unexpected single-quoted string \"\", expecting \"]\" at E:\\NexErp\\New folder\\app\\Models\\PaymentReceipt.php:20)
+[stacktrace]
+#0 {main}
+"} 
+[2026-02-06 17:46:14] local.ERROR: syntax error, unexpected single-quoted string "", expecting "]" {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): syntax error, unexpected single-quoted string \"\", expecting \"]\" at E:\\NexErp\\New folder\\app\\Models\\PaymentReceipt.php:20)
+[stacktrace]
+#0 {main}
+"} 
