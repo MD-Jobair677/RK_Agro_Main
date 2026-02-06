@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('booking_id')->constrained('bookings')->onUpdate('cascade')->onDelete('cascade');
             $table->string('payment_uid')->unique();
+            $table->number('cattle_booking_id')->nullable();
            
             $table->number('receipt_tk');
             $table->string('comment')->nullable();

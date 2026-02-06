@@ -354,6 +354,21 @@ class BookingController extends Controller
             // dd($TotalSalesPrice);
             $booking->due_price = $TotalSalesPrice - $booking->total_payment_amount;
             $booking->save();
+
+
+ // -------------------------------------Cattle booking payment-------------------------------------
+            $bookingPayment = new BookingPayment;
+            $bookingPayment->cattle_booking_id = $booking->id;
+            $bookingPayment->price             = 0;
+            $bookingPayment->save();
+            // -------------------------------------End Cattle booking payment-------------------------------------
+
+
+
+
+
+
+
             DB::commit();
             $notifyAdd[] = ['success', "Cattle booking updated successfully"];
             return back()->withToasts($toast ?? $notifyAdd);
@@ -973,11 +988,13 @@ class BookingController extends Controller
     function paymentSlip(Request $request, $id)
     {
  
-      
+
         $request->validate([
             'booking_id' => 'required|exists:bookings,id',
             // 'cattle_display_name' => 'required',
         ]);
+
+    //   dd($request->all());
 
         // dd($request->all());
 
@@ -990,34 +1007,55 @@ class BookingController extends Controller
             // Get booking payment data
             $receptPayment = BookingPayment::with(['booking.delivery_location', 'booking.customer'])
                 ->findOrFail($request->booking_id);
+                // dd($receptPayment);
 
              $total_received = BookingPayment::where('cattle_booking_id', $request->booking_id)
     ->sum('price');
 
-// dd($total_received);
+
 
 
              $payment_price  = CattleBooking::find($request->payment_id);
-          
+        // dd($payment_price);
+           
+    $payment_receipt_price = 0;
 
-
-
+    if($payment_price->payment ===null){
+ 
+    $payment_receipt_price = $payment_price->advance_price;
+        } 
+        
+        else if  ($payment_price->advance_price ===null){
+            $payment_receipt_price = $payment_price->payment;
+                    }
+            // dd($payment_receipt_price);
 
             $paymentReceipt = PaymentReceipt::updateOrCreate(
-
+  
                 [
+                     
                     'booking_id' => $request->booking_id,
                     'cattle_booking_id'=>$id,
+                  
                 ],
 
                 [
+                   
                     'payment_uid' => $UniqueID,
-                    'receipt_tk'  => $payment_price->advance_price??$payment_price->payment,
+                      
+                    'receipt_tk'  =>   $payment_receipt_price ,
+                     
                     'cattle_booking_id' => $id,
+                  
                     'comment'     => $request->comment ?? $receptPayment->cattle_name,
                     'printed_at'  => $request->printed_at ?? now(),
+                
+                      
                 ]
+                
             );
+
+            //  dd($UniqueID);
 
 
             DB::commit();
