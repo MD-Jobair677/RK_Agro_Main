@@ -23,6 +23,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Log;
+
 
 class BookingController extends Controller
 {
@@ -57,8 +59,8 @@ class BookingController extends Controller
     function store(Request $request)
     {
 
-    // dd($request->all());
-      
+        // dd($request->all());
+
         $request->validate([
             'customer_id'     => [
                 'required',
@@ -180,22 +182,22 @@ class BookingController extends Controller
 
 
             // -------------------------------------Cattle booking create-------------------------------------
-           foreach ($request->cattles as $cattleData) {
+            foreach ($request->cattles as $cattleData) {
 
-                      
 
-                        $cattleBooking = new CattleBooking();
-                        $cattleBooking->cattle_id = $cattleData['cattle_id'];
-                        $cattleBooking->booking_id = $booking->id;
-                        $cattleBooking->sale_price = $cattleData['sale_price'];
-                        $cattleBooking->advance_price = $cattleData['advance_price'];
-                        $cattleBooking->payment_method = $request->payment_method;
-                        $cattleBooking->save();
 
-                        $cattle = Cattle::findOrFail($cattleData['cattle_id']);
-                        $cattle->status = 2;
-                        $cattle->save();
-                    }
+                $cattleBooking = new CattleBooking();
+                $cattleBooking->cattle_id = $cattleData['cattle_id'];
+                $cattleBooking->booking_id = $booking->id;
+                $cattleBooking->sale_price = $cattleData['sale_price'];
+                $cattleBooking->advance_price = $cattleData['advance_price'];
+                $cattleBooking->payment_method = $request->payment_method;
+                $cattleBooking->save();
+
+                $cattle = Cattle::findOrFail($cattleData['cattle_id']);
+                $cattle->status = 2;
+                $cattle->save();
+            }
             // -------------------------------------End Cattle booking create-------------------------------------
 
 
@@ -277,7 +279,7 @@ class BookingController extends Controller
 
 
 
-   
+
 
     function update(Request $request, $id)
     {
@@ -356,7 +358,7 @@ class BookingController extends Controller
             $booking->save();
 
 
- // -------------------------------------Cattle booking payment-------------------------------------
+            // -------------------------------------Cattle booking payment-------------------------------------
             $bookingPayment = new BookingPayment;
             $bookingPayment->cattle_booking_id = $booking->id;
             $bookingPayment->price             = 0;
@@ -399,7 +401,7 @@ class BookingController extends Controller
                     if (!empty($image->image_path) && FileFacades::exists($filePath)) {
                         $fileDeleted = fileManager()->removeFile($filePath);
                     } else {
-                        \Log::warning('File not found: ' . $filePath);
+                        Log::warning('File not found: ' . $filePath);
                     }
 
                     $image->delete();
@@ -412,7 +414,7 @@ class BookingController extends Controller
             $toast[] = ['success', 'Cattle deleted successfully.'];
         } catch (\Throwable $th) {
             DB::rollBack();
-            \Log::error('Cattle deletion failed: ' . $th->getMessage());
+            Log::error('Cattle deletion failed: ' . $th->getMessage());
             $toast[] = ['error', 'Something went wrong! Cattle deletion failed.'];
         }
 
@@ -541,20 +543,20 @@ class BookingController extends Controller
     public function paymentList($id)
     {
         $booking = Booking::findOrFail($id);
-        
+
         $pageTitle = 'Payment List' . ' (' . $booking->booking_number . ")";
         $bookingPayments = BookingPayment::where('cattle_booking_id', $booking->id)
-        ->with('booking.cattle_bookings.cattle')
+            ->with('booking.cattle_bookings.cattle')
             ->orderBy('id', 'desc')
             ->paginate(getPaginate(30));
-//   dd($bookingPayments);
-            $is_printed = PaymentReceipt::where('booking_id', $booking->id)->first()?'yes':'no';
-                $paymentBooking = CattleBooking::where('booking_id',  $booking ->id)->with(['cattle:id,tag_number'])->paginate(getPaginate(30));
-                //  dd($paymentBooking);
-            // dd()
+        //   dd($bookingPayments);
+        $is_printed = PaymentReceipt::where('booking_id', $booking->id)->first() ? 'yes' : 'no';
+        $paymentBooking = CattleBooking::where('booking_id',  $booking->id)->with(['cattle:id,tag_number'])->paginate(getPaginate(30));
+        //  dd($paymentBooking);
+        // dd()
 
 
-        return view('admin.booking_payment.index', compact('pageTitle', 'bookingPayments', 'booking','is_printed','paymentBooking'));
+        return view('admin.booking_payment.index', compact('pageTitle', 'bookingPayments', 'booking', 'is_printed', 'paymentBooking'));
     }
 
 
@@ -569,9 +571,9 @@ class BookingController extends Controller
     public function addPayment($id)
     {
         $pageTitle = 'Add Payment';
-       $booking = Booking::with([
-                'cattle_bookings.cattle:id,tag_number,name'
-            ])->findOrFail($id);
+        $booking = Booking::with([
+            'cattle_bookings.cattle:id,tag_number,name'
+        ])->findOrFail($id);
 
 
 
@@ -581,83 +583,80 @@ class BookingController extends Controller
 
     public function storePayment(Request $request)
     {
+        // dd($request->all()); 
+        try {
+            DB::beginTransaction();
 
-    // dd($request->all());    
+            $request->validate([
+                'booking_id'          => ['required', 'integer', 'exists:bookings,id'],
+                'cattle_booking_ids'  => ['required', 'array'],
+                'payment_method'      => ['required'],
+                'amount'              => ['required', 'regex:/^\d+(\.\d{1,2})?$/', 'min:0'],
+                'payment_date'        => ['required', 'date_format:d/m/Y'],
+            ]);
 
+            $booking = Booking::findOrFail($request->booking_id);
 
+            $newTotalPayment = $booking->total_payment_amount + $request->amount;
 
-        $pageTitle = 'Create Payment';
-        $booking = Booking::findOrFail($request->booking_id);
-        // dd($booking);
-        $request->validate([
-            'booking_id'     => ['required', 'integer', 'exists:bookings,id'],
-           'cattle_booking_ids' => ['required', 'array'],
-           'payment_method' => ['required'],
-            'amount' => ['required', 'regex:/^\d+(\.\d{1,2})?$/', 'min:0'],
-           
-        ]);
+            if ($newTotalPayment > $booking->sale_price) {
+                return back()->withErrors([
+                    'amount' => 'Payment exceeds due amount'
+                ]);
+            }
 
-    
-  
+            // Cattle tag numbers
+            $cattles = Cattle::whereIn('id', $request->cattle_booking_ids)
+                ->select('tag_number')
+                ->get();
 
+            $tagNumberString = $cattles->pluck('tag_number')->implode('/');
 
-        $newTotalPayment = $booking->total_payment_amount + $request->amount;
-        // dd($newTotalPayment);
-        if ($newTotalPayment > $booking->sale_price) {
-            return back()->withErrors(['amount' => 'Payment exceeds due amount']);
+            $paymentDate = Carbon::createFromFormat('d/m/Y', $request->payment_date);
+
+            // Booking Payment
+            $bookingPayment = new BookingPayment();
+            $bookingPayment->cattle_booking_id = $booking->id;
+            $bookingPayment->price            = $request->amount;
+            $bookingPayment->cattle_name      = $tagNumberString;
+            $bookingPayment->payment_date     = $paymentDate->toDateString();
+            $bookingPayment->save();
+
+            // Update booking summary
+            $booking->total_payment_amount = $newTotalPayment;
+            $booking->due_price            = $booking->sale_price - $newTotalPayment;
+            $booking->save();
+
+            // Cattle Booking payment log
+            $cattleBooking = new CattleBooking();
+            $cattleBooking->booking_id     = $booking->id;
+            $cattleBooking->payment        = $request->amount;
+            $cattleBooking->cattle_name    = $tagNumberString;
+            $cattleBooking->payment_method = $request->payment_method;
+            $cattleBooking->booking_payment_id = $bookingPayment->id;
+
+            $cattleBooking->save();
+
+            DB::commit();
+
+            return back()->withToasts([
+                ['success', 'Booking Payment created successfully']
+            ]);
+        } catch (\Throwable $e) {
+
+            DB::rollBack();
+
+            // optional: log error for debugging
+            Log::error('Booking Payment Error', [
+                'message' => $e->getMessage(),
+                'line'    => $e->getLine(),
+                'file'    => $e->getFile(),
+            ]);
+
+            return back()->withErrors([
+                'error' => 'Something went wrong! Please try again.'
+            ]);
         }
-
-
-
-        // Cattle Name 
-
-        $cattleBookingIds = $request->cattle_booking_ids;
-
-            $cattles = Cattle::whereIn('id', $cattleBookingIds)->select('tag_number')->get();
-            $tagNumbers = $cattles->pluck('tag_number');
-                    
-                
-            $tagNumberString = $tagNumbers->implode('/');
-
-
-        $paymentDate = Carbon::createFromFormat('d/m/Y', $request->payment_date);
-
-        $bookingPayment = new BookingPayment();
-        $bookingPayment->cattle_booking_id = $booking->id;
-        $bookingPayment->price = $request->amount;
-        $bookingPayment->cattle_name = $tagNumberString;
-        $bookingPayment->payment_date = $paymentDate->toDateString();
-        $bookingPayment->save();
-
-        // Update booking payment summary
-        $booking->total_payment_amount = $newTotalPayment;
-        $total_due = $booking->sale_price - $newTotalPayment;
-        $booking->due_price = $total_due;
-        $booking->save();
-
-
-
-
-      
-        $cattleBooking = new CattleBooking();
-   
-        $cattleBooking->booking_id    = $booking->id;
-            
-        $cattleBooking->payment =  $request->amount;
-        $cattleBooking->cattle_name =  $tagNumberString;
-        // dd($request->payment_method);
-        $cattleBooking->payment_method =  $request->payment_method;
-
-        $cattleBooking->save();
-
-
-
-
-
-
-
-        $notifyAdd[] = ['success', "Booking Payment create successfully"];
-        return back()->withToasts($notifyAdd);
     }
 
 
@@ -665,12 +664,17 @@ class BookingController extends Controller
     function editPayment($booking, $payment)
     {
 
-    // dd("hello");
+        // dd($booking, $payment);
 
         $pageTitle = 'Edit Payment';
-        $BookingPayment = BookingPayment::findOrFail($payment);
+        $BookingPayment = CattleBooking::findOrFail($payment);
+        // dd($BookingPayment);
 
-        $booking = Booking::findOrFail($booking);
+        // $booking = Booking::findOrFail($booking);
+        $booking = Booking::with([
+            'cattle_bookings.cattle:id,tag_number,name'
+        ])->findOrFail($booking);
+        // dd($booking);
         return view('admin.booking_payment.edit', compact('pageTitle', 'BookingPayment', 'booking'));
     }
 
@@ -681,55 +685,138 @@ class BookingController extends Controller
 
     // ====================================payment update====================//
 
-    function updatePayment(Request $request)
-    {
+    // function updatePayment(Request $request)
+    // {
+
+    //     $request->validate([
+    //         'booking_id'   => ['required', 'integer', 'exists:bookings,id'],
+    //         'payment_id'   => ['required', 'integer', 'exists:booking_payments,id'],
+    //         'amount'       => ['required', 'regex:/^\d+(\.\d{1,2})?$/', 'min:0'],
+    //         'payment_date' => ['required'],
+    //         'cattle_name'  => ['required', 'string', 'max:255'],
+    //     ]);
+
+    //     $booking = Booking::findOrFail($request->booking_id);
+    //     $payment = BookingPayment::findOrFail($request->payment_id);
+
+
+    //     $adjustedTotalPayment =
+    //         $booking->total_payment_amount
+    //         - $payment->price
+    //         + $request->amount;
+
+
+    //     if ($adjustedTotalPayment > $booking->sale_price) {
+    //         return back()->withErrors([
+    //             'amount' => 'Payment exceeds due amount'
+    //         ]);
+    //     }
+
+    //     // Format payment date
+    //     $paymentDate = Carbon::createFromFormat('d/m/Y', $request->payment_date);
+
+    //     // Update payment
+    //     $payment->price = $request->amount;
+    //     $payment->cattle_name = $request->cattle_name;
+    //     $payment->payment_date = $paymentDate->toDateString();
+    //     $payment->save();
+    //     // Update booking summary
+    //     $booking->total_payment_amount = $adjustedTotalPayment;
+    //     $booking->due_price = $booking->sale_price - $adjustedTotalPayment;
+    //     $booking->save();
+
+    //     $notify[] = ['success', 'Booking Payment updated successfully'];
+    //     return redirect()->back()->withToasts($notify);
+    // }
+
+
+
+
+
+public function updatePayment(Request $request)
+{
+   
+
+
+// dd($request->all());
+    try {
+        DB::beginTransaction();
 
         $request->validate([
-            'booking_id'   => ['required', 'integer', 'exists:bookings,id'],
-            'payment_id'   => ['required', 'integer', 'exists:booking_payments,id'],
-            'amount'       => ['required', 'regex:/^\d+(\.\d{1,2})?$/', 'min:0'],
-            'payment_date' => ['required'],
-            'cattle_name'  => ['required', 'string', 'max:255'],
+            'booking_id'          => ['required', 'integer', 'exists:bookings,id'],
+            'cattle_booking_ids'  => ['required', 'array'],
+            'payment_method'      => ['required'],
+            'amount'              => ['required', 'regex:/^\d+(\.\d{1,2})?$/', 'min:0'],
+            'payment_date'        => ['required', 'date_format:d/m/Y'],
         ]);
+// dd($request->all()); 
+    $cattleBooking = CattleBooking::findOrFail($request->payment_id);
+// dd($booking_id);
 
+
+        $bookingPayment = BookingPayment::findOrFail($cattleBooking->booking_payment_id);
+        // dd($bookingPayment);
         $booking = Booking::findOrFail($request->booking_id);
-        $payment = BookingPayment::findOrFail($request->payment_id);
 
+        $oldAmount = $bookingPayment->price;
+        $newAmount = $request->amount;
 
-        $adjustedTotalPayment =
-            $booking->total_payment_amount
-            - $payment->price
-            + $request->amount;
+        $newTotalPayment = ($booking->total_payment_amount - $oldAmount) + $newAmount;
 
-
-        if ($adjustedTotalPayment > $booking->sale_price) {
+        if ($newTotalPayment > $booking->sale_price) {
             return back()->withErrors([
                 'amount' => 'Payment exceeds due amount'
             ]);
         }
 
-        // Format payment date
+        $cattles = Cattle::whereIn('id', $request->cattle_booking_ids)
+            ->select('tag_number')
+            ->get();
+
+        $tagNumberString = $cattles->pluck('tag_number')->implode('/');
+
         $paymentDate = Carbon::createFromFormat('d/m/Y', $request->payment_date);
 
-        // Update payment
-        $payment->price = $request->amount;
-        $payment->cattle_name = $request->cattle_name;
-        $payment->payment_date = $paymentDate->toDateString();
-        $payment->save();
-        // Update booking summary
-        $booking->total_payment_amount = $adjustedTotalPayment;
-        $booking->due_price = $booking->sale_price - $adjustedTotalPayment;
+        $bookingPayment->price        = $newAmount;
+        $bookingPayment->cattle_name  = $tagNumberString;
+        $bookingPayment->payment_date = $paymentDate->toDateString();
+        $bookingPayment->save();
+
+        $booking->total_payment_amount = $newTotalPayment;
+        $booking->due_price = $booking->sale_price - $newTotalPayment;
         $booking->save();
 
-        $notify[] = ['success', 'Booking Payment updated successfully'];
-        return redirect()->back()->withToasts($notify);
+    
+
+        if ($cattleBooking) {
+            $cattleBooking->payment        = $newAmount;
+            $cattleBooking->cattle_name    = $tagNumberString;
+             $cattleBooking->payment        = $request->amount;
+            $cattleBooking->payment_method = $request->payment_method;
+            $cattleBooking->save();
+        }
+
+        DB::commit();
+
+        return back()->withToasts([
+            ['success', 'Booking Payment updated successfully']
+        ]);
+
+    } catch (\Throwable $e) {
+
+        DB::rollBack();
+
+        Log::error('Booking Payment Update Error', [
+            'message' => $e->getMessage(),
+            'line'    => $e->getLine(),
+            'file'    => $e->getFile(),
+        ]);
+
+        return back()->withErrors([
+            'error' => 'Something went wrong! Please try again.'
+        ]);
     }
-
-
-
-
-
-
+}
 
 
 
@@ -827,7 +914,7 @@ class BookingController extends Controller
         // $notifyAdd[] = ['success', "Cattle booking delivered successfully"];
         return back()->withToasts($toast ?? $notifyAdd);
     }
- 
+
 
     // ============================ store cattle which cattle is printed===================================//
     public function Print_cattle(Request $request)
@@ -988,14 +1075,14 @@ class BookingController extends Controller
 
     function paymentSlip(Request $request, $id)
     {
- 
+
 
         $request->validate([
             'booking_id' => 'required|exists:bookings,id',
             // 'cattle_display_name' => 'required',
         ]);
 
-    //   dd($request->all());
+        //   dd($request->all());
 
         // dd($request->all());
 
@@ -1008,52 +1095,50 @@ class BookingController extends Controller
             // Get booking payment data
             $receptPayment = BookingPayment::with(['booking.delivery_location', 'booking.customer'])
                 ->findOrFail($request->booking_id);
-                // dd($receptPayment);
+            // dd($receptPayment);
 
-             $total_received = BookingPayment::where('cattle_booking_id', $request->booking_id)
-    ->sum('price');
-
-
+            $total_received = BookingPayment::where('cattle_booking_id', $request->booking_id)
+                ->sum('price');
 
 
-             $payment_price  = CattleBooking::find($request->payment_id);
-        // dd($payment_price);
-           
-    $payment_receipt_price = 0;
 
-    if($payment_price->payment ===null){
- 
-    $payment_receipt_price = $payment_price->advance_price;
-        } 
-        
-        else if  ($payment_price->advance_price ===null){
-            $payment_receipt_price = $payment_price->payment;
-                    }
+
+            $payment_price  = CattleBooking::find($request->payment_id);
+            // dd($payment_price);
+
+            $payment_receipt_price = 0;
+
+            if ($payment_price->payment === null) {
+
+                $payment_receipt_price = $payment_price->advance_price;
+            } else if ($payment_price->advance_price === null) {
+                $payment_receipt_price = $payment_price->payment;
+            }
             // dd($payment_receipt_price);
 
             $paymentReceipt = PaymentReceipt::updateOrCreate(
-  
+
                 [
-                     
+
                     'booking_id' => $request->booking_id,
-                    'cattle_booking_id'=>$id,
-                  
+                    'cattle_booking_id' => $id,
+
                 ],
 
                 [
-                   
+
                     'payment_uid' => $UniqueID,
-                      
-                    'receipt_tk'  =>   $payment_receipt_price ,
-                     
+
+                    'receipt_tk'  =>   $payment_receipt_price,
+
                     'cattle_booking_id' => $id,
-                  
+
                     'comment'     => $request->comment ?? $receptPayment->cattle_name,
                     'printed_at'  => $request->printed_at ?? now(),
-                
-                      
+
+
                 ]
-                
+
             );
 
             //  dd($UniqueID);
@@ -1064,13 +1149,13 @@ class BookingController extends Controller
             // PHP-only number to words
             $inword = takaInWords($paymentReceipt->receipt_tk);
 
-            $paymentReceiptsData = PaymentReceipt::with(['booking.customer', 'booking.delivery_location','booking.cattle'])->find($paymentReceipt->id);
+            $paymentReceiptsData = PaymentReceipt::with(['booking.customer', 'booking.delivery_location', 'booking.cattle'])->find($paymentReceipt->id);
             // dd( $paymentReceiptsData);
             // Generate PDF
             $pdf = Pdf::loadView('report.paymentReceipt', [
                 'paymentReceiptsData' => $paymentReceiptsData,
                 'inword' => $inword,
-                'total_received' =>$total_received,
+                'total_received' => $total_received,
             ]);
 
             return $pdf->stream('payment_receipt.pdf');
@@ -1091,69 +1176,62 @@ class BookingController extends Controller
 
 
 
-// =====================================Booking Cancel======================================//
+    // =====================================Booking Cancel======================================//
 
 
-public function BookingCancel(Request $request)
-{
-    $bookingId = $request->input('booking_id');
+    public function BookingCancel(Request $request)
+    {
+        $bookingId = $request->input('booking_id');
 
-    // Booking find
-    $booking = Booking::findOrFail($bookingId);
+        // Booking find
+        $booking = Booking::findOrFail($bookingId);
 
-    // Check if already delivered (status = 2)
-    if ($booking->status === 2) {
+        // Check if already delivered (status = 2)
+        if ($booking->status === 2) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Booking cannot be cancelled, it is already delivered.',
+                'status' => $booking->status,
+            ]);
+        } else {
+            // Update booking status to 'cancel'
+            $booking->booking_status = 'cancel';
+            $booking->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Booking cancelled successfully.',
+                'status' => $booking->booking_status,
+            ]);
+        }
+    }
+
+
+
+
+    public function undoBooking(Request $request)
+    {
+        $request->validate([
+            'booking_id' => 'required|exists:bookings,id',
+        ]);
+
+        $booking = Booking::findOrFail($request->booking_id);
+
+        // Only allow undo if currently cancelled
+        if ($booking->booking_status != 'cancel') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Booking is not cancelled.',
+            ]);
+        }
+
+        $booking->booking_status = 'active'; // undo cancel
+        $booking->save();
+
         return response()->json([
             'success' => true,
-            'message' => 'Booking cannot be cancelled, it is already delivered.',
-            'status' => $booking->status,
-        ]);
-    }else{
-         // Update booking status to 'cancel'
-    $booking->booking_status = 'cancel';
-    $booking->save();
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Booking cancelled successfully.',
-        'status' => $booking->booking_status,
-    ]);
-
-    }
-
-   
-}
-
-
-
-
-public function undoBooking(Request $request)
-{
-    $request->validate([
-        'booking_id' => 'required|exists:bookings,id',
-    ]);
-
-    $booking = Booking::findOrFail($request->booking_id);
-
-    // Only allow undo if currently cancelled
-    if ($booking->booking_status != 'cancel') {
-        return response()->json([
-            'success' => false,
-            'message' => 'Booking is not cancelled.',
+            'message' => 'Booking status changed to Active.',
+            'status' => $booking->booking_status,
         ]);
     }
-
-    $booking->booking_status = 'active'; // undo cancel
-    $booking->save();
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Booking status changed to Active.',
-        'status' => $booking->booking_status,
-    ]);
-}
-
-
-
-
 }

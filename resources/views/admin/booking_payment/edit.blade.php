@@ -10,36 +10,77 @@
                     <input type="hidden" value="{{ $booking->id }}" name="booking_id">
                     <input type="hidden" value="{{ $BookingPayment->id }}" name="payment_id">
                     <div class="row">
-                        <div class="col-lg-4 col-md-6 mb-3">
+                        <div class="col-lg-3 col-md-3 mb-3">
                             <div class="form-group">
                                 <label class="form-label required">@lang('Payment Date')</label>
                                 <input name="payment_date" id="datepicker" type="text" data-range="false"
                                     data-language="en" class="datepicker-here form-control" data-position='bottom right'
-                                    placeholder="@lang('Payment Date')" autocomplete="off" value="{{ $BookingPayment->payment_date}}">
+                                    placeholder="@lang('Payment Date')" autocomplete="off"
+                                    value="{{ $BookingPayment->payment_date }}">
                             </div>
                         </div>
-                        <div class="col-lg-4 col-md-6">
+                      
+
+                        <div class="col-lg-3 col-md-3">
                             <div class="form-group">
                                 <label class="form-label required">@lang('Cattle Name/number')</label>
-                               
-                                    <input  type="text" class="form-control" name="cattle_name" value="{{ $BookingPayment->cattle_name}}"
-                                        placeholder="@lang('Enter your cattle name/number')" required>
-                               
+
+                                {{-- <input type="text" class="form-control" name="cattle_name"
+                                        placeholder="@lang('Enter your cattle name/number')" required> --}}
+
+                                <div class="mb-3">
+
+
+                                    <div class="d-flex flex-wrap gap-3">
+                                        @foreach ($booking->cattle_bookings as $cb)
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="cattle_booking_ids[]"
+                                                    value="{{ $cb->cattle_id }}" id="cattle{{ $cb->id }}">
+                                                    {{-- @php
+                                                        dd($cb->cattle_id);
+                                                    @endphp --}}
+
+                                                <label class="form-check-label" for="cattle{{ $cb->id . ' ' . $cb->name }}">
+                                                    {{ optional($cb->cattle)->tag_number }} </label>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+
+
+
                             </div>
                         </div>
 
 
+                        <div class="col-lg-3 col-md-3 mb-3">
+                            <div class="form-group mt-2">
+                                <label class="form-label required">@lang('Payment Method')</label>
+                                <select name="payment_method" class="form-control" required>
+                                    <option value="">-- @lang('Select Payment Method') --</option>
+                                    <option value="Cash" {{ $BookingPayment->payment_method == 'Cash' ? 'selected' : '' }}>Cash
+                                    </option>
+                                    <option value="Bank" {{ $BookingPayment->payment_method == 'Bank' ? 'selected' : '' }}>Bank
+                                    </option>
+                                    <option value="Bkash" {{ $BookingPayment->payment_method == 'Bkash' ? 'selected' : '' }}>Bkash
+                                    </option>
+                                    <option value="Rocket" {{ $BookingPayment->payment_method == 'Rocket' ? 'selected' : '' }}>Rocket
+                                    </option>
+                                    <option value="Nagad" {{ $BookingPayment->payment_method == 'Nagad' ? 'selected' : '' }}>Nagad
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
 
-
-                        <div class="col-lg-4 col-md-6">
+                        <div class="col-lg-3 col-md-3">
                             <div class="form-group">
                                 <label class="form-label required">@lang('Amount')</label>
-                              
-                                    <input type="number" class="form-control" name="amount" value="{{ $BookingPayment->price}}"
-                                        placeholder="@lang('Enter your payment amount')" required>
-                               
+
+                                <input type="number" class="form-control" name="amount"
+                                    value="{{ $BookingPayment->payment }}" placeholder="@lang('Enter your payment amount')" required>
+
                             </div>
-                        </div>  
+                        </div>
                     </div>
 
                     <div class="row pt-4">

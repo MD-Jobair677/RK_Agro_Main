@@ -33,7 +33,10 @@
                                         @foreach ($booking->cattle_bookings as $cb)
                                             <div class="form-check">
                                                 <input class="form-check-input" type="checkbox" name="cattle_booking_ids[]"
-                                                    value="{{ $cb->id }}" id="cattle{{ $cb->id }}">
+                                                    value="{{ $cb->cattle_id }}" id="cattle{{ $cb->id }}">
+                                                    {{-- @php
+                                                        dd($cb->cattle_id);
+                                                    @endphp --}}
 
                                                 <label class="form-check-label" for="cattle{{ $cb->id . ' ' . $cb->name }}">
                                                     {{ optional($cb->cattle)->tag_number }} </label>
@@ -52,17 +55,31 @@
                                 <label class="form-label required">@lang('Payment Method')</label>
                                 <select name="payment_method" class="form-control" required>
                                     <option value="">-- @lang('Select Payment Method') --</option>
-                                    <option value="Cash" {{ old('payment_method') == 'Cash' ? 'selected' : '' }}>Cash
+
+                                    <option value="Cash"
+                                        {{ old('payment_method', $payment->payment_method ?? '') == 'Cash' ? 'selected' : '' }}>
+                                        Cash
                                     </option>
-                                    <option value="Bank" {{ old('payment_method') == 'Bank' ? 'selected' : '' }}>Bank
+
+                                    <option value="Bank"
+                                        {{ old('payment_method', $payment->payment_method ?? '') == 'Bank' ? 'selected' : '' }}>
+                                        Bank
                                     </option>
-                                    <option value="Bkash" {{ old('payment_method') == 'Bkash' ? 'selected' : '' }}>Bkash
+
+                                    <option value="Bkash"
+                                        {{ old('payment_method', $payment->payment_method ?? '') == 'Bkash' ? 'selected' : '' }}>
+                                        Bkash
                                     </option>
-                                    <option value="Rocket" {{ old('payment_method') == 'Rocket' ? 'selected' : '' }}>Rocket
+
+                                    <option value="Rocket"
+                                        {{ old('payment_method', $payment->payment_method ?? '') == 'Rocket' ? 'selected' : '' }}>
+                                        Rocket
                                     </option>
-                                    <option value="Nagad" {{ old('payment_method') == 'Nagad' ? 'selected' : '' }}>Nagad
+
+                                    <option value="Nagad"
+                                        {{ old('payment_method', $payment->payment_method ?? '') == 'Nagad' ? 'selected' : '' }}>
+                                        Nagad
                                     </option>
-                                    <!-- আরো payment methods চাইলে এখানে add করতে পারো -->
                                 </select>
                             </div>
                         </div>

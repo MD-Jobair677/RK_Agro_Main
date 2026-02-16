@@ -67,23 +67,22 @@
 
 
 
-                                    </td>
+                                
                                     <td class="text-center">{{ $item->created_at }}</td>
 
 
                                     <td class="text-center">
 
-                                        @if ($item->sale_price  )
+                                        @if ($item->sale_price)
                                             {{ showAmount($item->sale_price) }}
                                         @else
                                             N/A
                                         @endif
 
-
-
-
-
                                     </td>
+
+
+
                                     <td class="text-center">
                                         @if ($item->advance_price)
                                             {{ showAmount($item->advance_price) }}
@@ -126,34 +125,34 @@
                                             <input type="hidden" name="booking_id" value="{{ $item->booking_id }}">
 
 
-                                      
-                                               <input type="hidden" name="payment_id"
-                                                value="{{ $item->id }}">
 
-                                                    <td class="text-center">
+                                            <input type="hidden" name="payment_id" value="{{ $item->id }}">
+
+
+
+                               
+
+                          
                                         @if ($item->cattle)
                                             {{ $item->cattle->tag_number . ' ' . $item->cattle->cattle_name }}
 
-                                             <input type="hidden" name="comment"
+                                            <input type="hidden" name="comment"
                                                 value=" {{ $item->cattle->tag_number . ' ' . $item->cattle->cattle_name }}">
                                         @else
-
-                                         <input type="hidden" name="comment"
-                                                value="{{ $item->cattle_name }}">
-                                            
+                                            <input type="hidden" name="comment" value="{{ $item->cattle_name }}">
                                         @endif
-                                    </td>
+                                 
 
 
 
-                                        
-
-                                          
 
 
 
-                                            {{-- <input type="hidden" name="comment" id="hidden-comment-{{ $item->id }}"> --}}
-                                        </form>
+
+
+
+                                    {{-- <input type="hidden" name="comment" id="hidden-comment-{{ $item->id }}"> --}}
+                                    </form>
                                     </td>
                                     <td class="text-center">{{ $is_printed == 'yes' ? 'Printed' : 'Not Printed' }}</td>
                                 </tr>
