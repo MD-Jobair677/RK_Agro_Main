@@ -116,3 +116,13 @@ ALTER TABLE payment_recipt
 
 ALTER TABLE `cattle_bookings`,'sale_price,advance price,CHANGE `cattle_id` `cattle_id` INT(10) UNSIGNED NULL;  akana payment_method add koa lagba
 booking_payment   a booking_payment_id add kora lagba
+
+
+<!-- last modifid in cpenel at 16/2/2026  -->
+
+
+booking_payments
+bookings (booking_status,)
+cattle_bookings (payment,payment_method ,cattle_name,booking_payment_id)
+
+

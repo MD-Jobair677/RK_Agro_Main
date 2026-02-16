@@ -733,90 +733,89 @@ class BookingController extends Controller
 
 
 
-public function updatePayment(Request $request)
-{
-   
+    public function updatePayment(Request $request)
+    {
 
 
-// dd($request->all());
-    try {
-        DB::beginTransaction();
 
-        $request->validate([
-            'booking_id'          => ['required', 'integer', 'exists:bookings,id'],
-            'cattle_booking_ids'  => ['required', 'array'],
-            'payment_method'      => ['required'],
-            'amount'              => ['required', 'regex:/^\d+(\.\d{1,2})?$/', 'min:0'],
-            'payment_date'        => ['required', 'date_format:d/m/Y'],
-        ]);
-// dd($request->all()); 
-    $cattleBooking = CattleBooking::findOrFail($request->payment_id);
-// dd($booking_id);
+        // dd($request->all());
+        try {
+            DB::beginTransaction();
+
+            $request->validate([
+                'booking_id'          => ['required', 'integer', 'exists:bookings,id'],
+                'cattle_booking_ids'  => ['required', 'array'],
+                'payment_method'      => ['required'],
+                'amount'              => ['required', 'regex:/^\d+(\.\d{1,2})?$/', 'min:0'],
+                'payment_date'        => ['required', 'date_format:d/m/Y'],
+            ]);
+            // dd($request->all()); 
+            $cattleBooking = CattleBooking::findOrFail($request->payment_id);
+            // dd($booking_id);
 
 
-        $bookingPayment = BookingPayment::findOrFail($cattleBooking->booking_payment_id);
-        // dd($bookingPayment);
-        $booking = Booking::findOrFail($request->booking_id);
+            $bookingPayment = BookingPayment::findOrFail($cattleBooking->booking_payment_id);
+            // dd($bookingPayment);
+            $booking = Booking::findOrFail($request->booking_id);
 
-        $oldAmount = $bookingPayment->price;
-        $newAmount = $request->amount;
+            $oldAmount = $bookingPayment->price;
+            $newAmount = $request->amount;
 
-        $newTotalPayment = ($booking->total_payment_amount - $oldAmount) + $newAmount;
+            $newTotalPayment = ($booking->total_payment_amount - $oldAmount) + $newAmount;
 
-        if ($newTotalPayment > $booking->sale_price) {
+            if ($newTotalPayment > $booking->sale_price) {
+                return back()->withErrors([
+                    'amount' => 'Payment exceeds due amount'
+                ]);
+            }
+
+            $cattles = Cattle::whereIn('id', $request->cattle_booking_ids)
+                ->select('tag_number')
+                ->get();
+
+            $tagNumberString = $cattles->pluck('tag_number')->implode('/');
+
+            $paymentDate = Carbon::createFromFormat('d/m/Y', $request->payment_date);
+
+            $bookingPayment->price        = $newAmount;
+            $bookingPayment->cattle_name  = $tagNumberString;
+            $bookingPayment->payment_date = $paymentDate->toDateString();
+            $bookingPayment->save();
+
+            $booking->total_payment_amount = $newTotalPayment;
+            $booking->due_price = $booking->sale_price - $newTotalPayment;
+            $booking->save();
+
+
+
+            if ($cattleBooking) {
+                $cattleBooking->payment        = $newAmount;
+                $cattleBooking->cattle_name    = $tagNumberString;
+                $cattleBooking->payment        = $request->amount;
+                $cattleBooking->payment_method = $request->payment_method;
+                $cattleBooking->save();
+            }
+
+            DB::commit();
+
+            return back()->withToasts([
+                ['success', 'Booking Payment updated successfully']
+            ]);
+        } catch (\Throwable $e) {
+
+            DB::rollBack();
+
+            Log::error('Booking Payment Update Error', [
+                'message' => $e->getMessage(),
+                'line'    => $e->getLine(),
+                'file'    => $e->getFile(),
+            ]);
+
             return back()->withErrors([
-                'amount' => 'Payment exceeds due amount'
+                'error' => 'Something went wrong! Please try again.'
             ]);
         }
-
-        $cattles = Cattle::whereIn('id', $request->cattle_booking_ids)
-            ->select('tag_number')
-            ->get();
-
-        $tagNumberString = $cattles->pluck('tag_number')->implode('/');
-
-        $paymentDate = Carbon::createFromFormat('d/m/Y', $request->payment_date);
-
-        $bookingPayment->price        = $newAmount;
-        $bookingPayment->cattle_name  = $tagNumberString;
-        $bookingPayment->payment_date = $paymentDate->toDateString();
-        $bookingPayment->save();
-
-        $booking->total_payment_amount = $newTotalPayment;
-        $booking->due_price = $booking->sale_price - $newTotalPayment;
-        $booking->save();
-
-    
-
-        if ($cattleBooking) {
-            $cattleBooking->payment        = $newAmount;
-            $cattleBooking->cattle_name    = $tagNumberString;
-             $cattleBooking->payment        = $request->amount;
-            $cattleBooking->payment_method = $request->payment_method;
-            $cattleBooking->save();
-        }
-
-        DB::commit();
-
-        return back()->withToasts([
-            ['success', 'Booking Payment updated successfully']
-        ]);
-
-    } catch (\Throwable $e) {
-
-        DB::rollBack();
-
-        Log::error('Booking Payment Update Error', [
-            'message' => $e->getMessage(),
-            'line'    => $e->getLine(),
-            'file'    => $e->getFile(),
-        ]);
-
-        return back()->withErrors([
-            'error' => 'Something went wrong! Please try again.'
-        ]);
     }
-}
 
 
 
@@ -1108,11 +1107,10 @@ public function updatePayment(Request $request)
 
             $payment_receipt_price = 0;
 
-            if ($payment_price->payment === null) {
-
+            if ((float)$payment_price->advance_price > 0) {
                 $payment_receipt_price = $payment_price->advance_price;
-            } else if ($payment_price->advance_price === null) {
-                $payment_receipt_price = $payment_price->payment;
+            } else {
+                $payment_receipt_price = $payment_price->payment ?? 0;
             }
             // dd($payment_receipt_price);
 
