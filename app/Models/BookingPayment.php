@@ -22,4 +22,11 @@ class BookingPayment extends Model
      return $this->belongsTo(Booking::class,'cattle_booking_id','id');
     }
 
+
+
+    public function cattleBooking2()
+{
+    return $this->belongsTo(CattleBooking::class, 'cattle_booking_id', 'booking_id');
+}
+
 }

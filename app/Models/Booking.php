@@ -67,7 +67,15 @@ class Booking extends Model
     }
 
 
-
+public function cattles()
+{
+    return $this->belongsToMany(
+        Cattle::class,
+        'cattle_bookings',
+        'booking_id',
+        'cattle_id'
+    );
+}
 
     // 
 }

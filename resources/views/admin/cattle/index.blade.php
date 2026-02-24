@@ -19,6 +19,8 @@
                                 <th class="text-center">@lang('Asking Price')</th>
                                 <th class="text-center">@lang('Weight')</th>
                                 <th class="text-center">@lang('Status')</th>
+                                <th class="text-center">@lang('Booking Number')</th>
+
                                 <th class="text-center">@lang('Actions')</th>
                             </tr>
                         </thead>
@@ -38,41 +40,56 @@
                                     <td class="text-center">{{ $cattle->asking_price }}</td>
                                     <td class="text-center">{{ $cattle->purchase_weight }}</td>
                                     <td class="text-center">@php echo $cattle->statusBadge @endphp</td>
-                                    @if($cattle->status == 1 || $cattle->status == 2)
+
+
+
                                     <td class="text-center">
-                                        <div>
-                                            <div class="btn-group">
-                                                <button class="btn btn-sm btn-label-primary dropdown-toggle" type="button"
-                                                    data-bs-toggle="dropdown"
-                                                    aria-expanded="false">@lang('Action')</button>
-                                                <ul class="dropdown-menu">
-                                                    <li>
-                                                        <a class="dropdown-item"
-                                                            href="{{ route('admin.cattle.edit', $cattle->id) }}">
-                                                            <span class="las la-pen fs-6 link-warning"></span>
-                                                            @lang('Edit Cattle')
-                                                        </a>
-                                                    </li>
-                                                    @if($cattle->status == 1)
-                                                    <li>
-                                                        <a class="dropdown-item"
-                                                            href="{{ route('admin.cattle.edit_weight', $cattle->id) }}">
-                                                            <span class="las la-pen fs-6 link-warning"></span>
-                                                            @lang('Edit Weight & Purchase')
-                                                        </a>
-                                                    </li>
-                                                    <li>
-                                                        <a class="dropdown-item"
-                                                            href="{{ route('admin.cattle.detail', $cattle->id) }}">
-                                                            <span class="tf-icons las la-info-circle me-1"></span>
-                                                            @lang('Details')
-                                                        </a>
-                                                    </li>
-                                                    @endif
-                                                </ul>
-                                            </div>
-                                        </div>
+                                        @foreach ($cattle->bookings as $booking)
+                                            {{ $booking->booking_number }}
+                                        @endforeach
                                     </td>
+
+
+
+
+
+
+
+                                    @if ($cattle->status == 1 || $cattle->status == 2)
+                                        <td class="text-center">
+                                            <div>
+                                                <div class="btn-group">
+                                                    <button class="btn btn-sm btn-label-primary dropdown-toggle"
+                                                        type="button" data-bs-toggle="dropdown"
+                                                        aria-expanded="false">@lang('Action')</button>
+                                                    <ul class="dropdown-menu">
+                                                        <li>
+                                                            <a class="dropdown-item"
+                                                                href="{{ route('admin.cattle.edit', $cattle->id) }}">
+                                                                <span class="las la-pen fs-6 link-warning"></span>
+                                                                @lang('Edit Cattle')
+                                                            </a>
+                                                        </li>
+                                                        @if ($cattle->status == 1)
+                                                            <li>
+                                                                <a class="dropdown-item"
+                                                                    href="{{ route('admin.cattle.edit_weight', $cattle->id) }}">
+                                                                    <span class="las la-pen fs-6 link-warning"></span>
+                                                                    @lang('Edit Weight & Purchase')
+                                                                </a>
+                                                            </li>
+                                                            <li>
+                                                                <a class="dropdown-item"
+                                                                    href="{{ route('admin.cattle.detail', $cattle->id) }}">
+                                                                    <span class="tf-icons las la-info-circle me-1"></span>
+                                                                    @lang('Details')
+                                                                </a>
+                                                            </li>
+                                                        @endif
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </td>
                                     @endif
                                 </tr>
                             @empty

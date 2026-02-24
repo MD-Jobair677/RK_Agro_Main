@@ -559,7 +559,40 @@ class BookingController extends Controller
         return view('admin.booking_payment.index', compact('pageTitle', 'bookingPayments', 'booking', 'is_printed', 'paymentBooking'));
     }
 
+    // public function paymentList($id)
+    // {
+    //     $booking = Booking::findOrFail($id);
 
+    //     $pageTitle = 'Payment List (' . $booking->booking_number . ")";
+
+    //     $bookingPayments = BookingPayment::where('cattle_booking_id', $booking->id)
+    //         ->with([
+    //             'cattleBooking2.cattle:id,tag_number'
+    //         ])
+    //         ->orderBy('id', 'desc')
+    //         ->paginate(getPaginate(30));
+
+    // // $bookingPayments = BookingPayment::where('cattle_booking_id', $booking->id)
+    // // ->with([
+    // //     'cattleBooking' => function ($q) use ($booking) {
+    // //         $q->where('booking_id',  $booking->id);   
+    // //     },
+    // //     'cattleBooking.cattle:id,tag_number'
+    // // ])
+    // // ->orderBy('id', 'desc')
+    // // ->paginate(getPaginate(30));
+
+    //     // dd($bookingPayments);
+  
+    //     $is_printed = PaymentReceipt::where('booking_id', $booking->id)->exists() ? 'yes' : 'no';
+
+    //     return view('admin.booking_payment.index', compact(
+    //         'pageTitle',
+    //         'bookingPayments',
+    //         'booking',
+    //         'is_printed'
+    //     ));
+    // }
 
 
 

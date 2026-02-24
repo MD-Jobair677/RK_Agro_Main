@@ -13,12 +13,12 @@ class RedirectIfNotAdmin
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
-    public function handle(Request $request, Closure $next, $guard = 'admin'): Response
-    {
-        if (!auth()->guard($guard)->check()) {
-            return to_route('admin.login.form');
-        }
+        public function handle(Request $request, Closure $next, $guard = 'admin'): Response
+        {
+            if (!auth()->guard($guard)->check()) {
+                return to_route('admin.login.form');
+            }
 
-        return $next($request);
-    }
+            return $next($request);
+        }
 }

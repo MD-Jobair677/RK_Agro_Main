@@ -27,12 +27,16 @@ class CattleController extends Controller
     {
 
         $pageTitle = 'Cattle List';
-        $cattles = Cattle::with(['cattleCategory', 'primaryImage'])
+        $cattles = Cattle::with([
+            'cattleCategory',
+            'primaryImage',
+            'bookings'   // plural
+        ])
             ->searchable(['tag_number'])
             ->dateFilter()
-            ->orderBy('id')
             ->latest()
             ->paginate(getPaginate(50));
+        // dd($cattles);
         return view('admin.cattle.index', compact('pageTitle', 'cattles'));
     }
 
@@ -157,7 +161,7 @@ class CattleController extends Controller
             $genExpense->expense_type  = ManageStatus::CATTLE;
             $genExpense->expense_date  = $purchaseDate->toDateTimeString();
             $genExpense->cost_amount   = $request->purchase_price;
-            $genExpense->purpose       = 'Expense for purchase cattle of ' .$request->name.'/'. $request->tag_number;
+            $genExpense->purpose       = 'Expense for purchase cattle of ' . $request->name . '/' . $request->tag_number;
             $genExpense->note          = $purifier->purify($request->description);
             $genExpense->save();
 
@@ -464,7 +468,7 @@ class CattleController extends Controller
             //     $query->where('cattle_group', ManageStatus::CATTLE_CATEGORY_COW_GROUP);
             // })
             ->count() + 1;
-            // dd($cattles);
+        // dd($cattles);
 
         // Load all related general expenses
         $specificGenTotalExpenses = GenTotalExpense::whereIn('expens_type', [
