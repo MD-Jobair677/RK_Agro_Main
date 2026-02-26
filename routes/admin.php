@@ -186,7 +186,7 @@ Route::middleware('admin')->group(function () {
         Route::post('update/{id}', 'update')->name('update');
         Route::delete('delete/booking/{id}', 'delete')->name('delete.booking');
         Route::post('/bookings/cancel', 'BookingCancel')->name('cancel');
-    Route::post('/bookings/undo',  'undoBooking')->name('undo');
+        Route::post('/bookings/undo',  'undoBooking')->name('undo');
 
 
 

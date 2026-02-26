@@ -22,7 +22,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Log;
 
 
@@ -32,13 +31,14 @@ class BookingController extends Controller
     {
         $pageTitle = 'Booking List';
         $latestBookingIds = Booking::selectRaw('MAX(id) as id')
-            ->groupBy('booking_number');
+            ->groupBy('booking_number', 'booking_status');
         $bookings = Booking::with(['customer', 'delivery_location'])
             ->whereIn('id', $latestBookingIds->pluck('id'))
             ->searchable(['customer:first_name', 'booking_number'])
             ->dateFilter()
             ->orderBy('id', 'desc')
             ->paginate(getPaginate());
+            // dd($bookings);
 
 
         $cattles = Cattle::where('status', 1)->get();
@@ -76,7 +76,9 @@ class BookingController extends Controller
             'cus_address'     => 'nullable|string',
             'ref_name'        => 'nullable|string',
             'ref_cont_number' => 'nullable|string',
-            'booking_type'    => ['required', 'numeric', Rule::in([1, 2])],
+            'is_manual_booking' => ['nullable'],
+            'booking_type'    => ['required_without:is_manual_booking'],
+            'booking_number'  => ['required_if:is_manual_booking,1', 'nullable', 'string'],
             'payment_method'  => ['required', 'string'],
             'delivery_date'   => ['required', 'date_format:m/d/Y'],
             'distric_city'    => ['required', 'string'],
@@ -147,16 +149,44 @@ class BookingController extends Controller
 
 
             // -------------------------------------Make Booking number -------------------------------------
-            $prefix      = $request->booking_type == 1 ? 'INS-' : 'EID-';
-            $lastBooking = Booking::where('booking_type', $request->booking_type)->orderBy('id', 'desc')->first();
+            if ($request->is_manual_booking) {
+                // Manual booking - user provided booking number
+                $bookingNumber = $request->booking_number;
 
-            if ($lastBooking) {
-                $numberPart      = Str::of($lastBooking->booking_number)->after($prefix);
-                $incrementNumber = (int) $numberPart->value + 1;
+                // Detect booking_type from booking number prefix
+                if (Str::startsWith(strtoupper($bookingNumber), 'INS-')) {
+                    $bookingType = 1;
+                } elseif (Str::startsWith(strtoupper($bookingNumber), 'EID-')) {
+                    $bookingType = 2;
+                } else {
+                    $bookingType = 3; // Manual/Other type
+                }
+
+                // Check if booking number already exists in database
+                $existingBooking = Booking::where('booking_number', $bookingNumber)->orderBy('id', 'desc')->first();
+
+                if ($existingBooking) {
+                    if ($existingBooking->booking_status !== 'cancel') {
+                        // Booking exists and is active - don't allow
+                        $toast[] = ['error', 'This booking number already exists and is active. Cannot create duplicate booking.'];
+                        return back()->withToasts($toast)->withInput();
+                    }
+                    // Booking exists but is cancelled - allow reuse
+                }
             } else {
-                $incrementNumber = 1;
+                $bookingType = $request->booking_type;
+                // Auto-generate booking number
+                $prefix      = $request->booking_type == 1 ? 'INS-' : 'EID-';
+                $lastBooking = Booking::where('booking_type', $request->booking_type)->orderBy('id', 'desc')->first();
+
+                if ($lastBooking) {
+                    $numberPart      = Str::of($lastBooking->booking_number)->after($prefix);
+                    $incrementNumber = (int) $numberPart->value + 1;
+                } else {
+                    $incrementNumber = 1;
+                }
+                $bookingNumber = $prefix . str_pad($incrementNumber, 6, '0', STR_PAD_LEFT);
             }
-            $bookingNumber       = $prefix . str_pad($incrementNumber, 6, '0', STR_PAD_LEFT);
             // -------------------------------------End make Booking number -------------------------------------
 
 
@@ -166,7 +196,7 @@ class BookingController extends Controller
             // -------------------------------------Booking create-------------------------------------
             $booking = new Booking();
             $booking->customer_id          = isset($customer) ? $customer->id : $request->customer_id;
-            $booking->booking_type         = $request->booking_type;
+            $booking->booking_type         = $bookingType;
             $booking->booking_number       = $bookingNumber;
             $booking->payment_method       = $request->payment_method;
             $booking->sale_price           = $totalSalePrice;
@@ -224,8 +254,13 @@ class BookingController extends Controller
             return back()->withToasts($toast);
         } catch (\Exception $exp) {
             DB::rollBack();
+            log::error('Booking Creation Error', [
+                'message' => $exp->getMessage(),
+                'line'    => $exp->getLine(),
+                'file'    => $exp->getFile(),
+            ]);
             $toast[] = ['error', 'Something went wrong! Cattle booking creation failed.'];
-            return back()->withToasts($toast);
+            return back()->withToasts($toast)->withInput();
         }
     }
 

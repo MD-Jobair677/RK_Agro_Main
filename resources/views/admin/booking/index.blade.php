@@ -235,8 +235,8 @@
                             // console.log(res.message);
 
                             // Optional: change button text or color
-                             location.reload();
-                            
+                            location.reload();
+
                         }
                     },
                     error: function(err) {
@@ -256,38 +256,38 @@
 
 
 
-        $(document).ready(function(){
+        $(document).ready(function() {
 
-    $('.undoBookingBtn').click(function(e){
-        e.preventDefault();
+            $('.undoBookingBtn').click(function(e) {
+                e.preventDefault();
 
-        var button = $(this);
-        var bookingId = button.data('id');
+                var button = $(this);
+                var bookingId = button.data('id');
 
-        if(!confirm('Are you sure you want to undo cancel?')) return;
+                if (!confirm('Are you sure you want to undo cancel?')) return;
 
-        $.ajax({
-            url: "{{ route('admin.booking.undo') }}",
-            type: 'POST',
-            data: {
-                booking_id: bookingId,
-                _token: "{{ csrf_token() }}"
-            },
-            success: function(res){
-                if(res.success){
-                 
+                $.ajax({
+                    url: "{{ route('admin.booking.undo') }}",
+                    type: 'POST',
+                    data: {
+                        booking_id: bookingId,
+                        _token: "{{ csrf_token() }}"
+                    },
+                    success: function(res) {
+                        if (res.success) {
 
-                    location.reload();
-                } else {
-                    alert(res.message);
-                }
-            },
-            error: function(err){
-                alert('Something went wrong!');
-            }
+
+                            location.reload();
+                        } else {
+                            alert(res.message);
+                        }
+                    },
+                    error: function(err) {
+                        alert('Something went wrong!');
+                    }
+                });
+            });
+
         });
-    });
-
-});
     </script>
 @endpush

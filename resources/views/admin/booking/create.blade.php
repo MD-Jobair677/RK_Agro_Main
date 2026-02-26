@@ -14,11 +14,16 @@
                                         <div class="col-lg-6 col-md-12 mb-3">
                                             <div class="form-group">
                                                 <label class="col-form-label required">@lang('Cattle Booking Type')</label>
-                                                <select class="select form-select" name="booking_type" required>
+                                                <div class="form-check mb-2">
+                                                    <input class="form-check-input" type="checkbox" id="manualBookingCheck" name="is_manual_booking" value="1" {{ old('is_manual_booking') ? 'checked' : '' }}>
+                                                    <label class="form-check-label" for="manualBookingCheck">@lang('Add Manual Booking')</label>
+                                                </div>
+                                                <select class="select form-select {{ old('is_manual_booking') ? 'd-none' : '' }}" {{ old('is_manual_booking') ? '' : 'name=booking_type required' }} id="bookingTypeSelect">
                                                     <option>@lang('Select Booking Type')</option>
-                                                    <option value="1">@lang('Instant booking')</option>
-                                                    <option value="2">@lang('Eid booking')</option>
+                                                    <option value="1" {{ old('booking_type') == 1 ? 'selected' : '' }}>@lang('Instant booking')</option>
+                                                    <option value="2" {{ old('booking_type') == 2 ? 'selected' : '' }}>@lang('Eid booking')</option>
                                                 </select>
+                                                <input type="text" class="form-control {{ old('is_manual_booking') ? '' : 'd-none' }}" id="bookingNumberInput" {{ old('is_manual_booking') ? 'name=booking_number required' : '' }} value="{{ old('booking_number') }}" placeholder="@lang('Enter Booking Number (e.g. INS-000001)')">
                                             </div>
                                         </div>
                                         {{-- Existing Customer Input --}}
@@ -28,9 +33,9 @@
                                                 <select class="select2 form-select" name="customer_id"
                                                     data-allow-clear="false" required>
                                                     <option value="0"> @lang('Select customer')</option>
-                                                    <option value="new_customer"> @lang('Create New Customer')</option>
+                                                    <option value="new_customer" {{ old('customer_id') == 'new_customer' ? 'selected' : '' }}> @lang('Create New Customer')</option>
                                                     @foreach ($customers ?? [] as $item)
-                                                        <option value="{{ optional($item)->id }}">
+                                                        <option value="{{ optional($item)->id }}" {{ old('customer_id') == optional($item)->id ? 'selected' : '' }}>
                                                             {{ ucfirst(optional($item)->fullname) }}
                                                             ({{ optional($item)->phone }})
                                                         </option>
@@ -751,6 +756,19 @@
                     }
                 });
             }
+
+            // Manual Booking Checkbox Toggle
+            $('#manualBookingCheck').on('change', function() {
+                if ($(this).is(':checked')) {
+                    // Hide select, show input for booking number
+                    $('#bookingTypeSelect').addClass('d-none').prop('required', false).removeAttr('name');
+                    $('#bookingNumberInput').removeClass('d-none').prop('required', true).attr('name', 'booking_number');
+                } else {
+                    // Hide input, show select
+                    $('#bookingNumberInput').addClass('d-none').prop('required', false).removeAttr('name').val('');
+                    $('#bookingTypeSelect').removeClass('d-none').prop('required', true).attr('name', 'booking_type');
+                }
+            });
 
             $(document).ready(function() {
                 addCattleRow(true);
