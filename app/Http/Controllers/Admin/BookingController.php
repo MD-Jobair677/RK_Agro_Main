@@ -30,10 +30,7 @@ class BookingController extends Controller
     function index()
     {
         $pageTitle = 'Booking List';
-        $latestBookingIds = Booking::selectRaw('MAX(id) as id')
-            ->groupBy('booking_number', 'booking_status');
         $bookings = Booking::with(['customer', 'delivery_location'])
-            ->whereIn('id', $latestBookingIds->pluck('id'))
             ->searchable(['customer:first_name', 'booking_number'])
             ->dateFilter()
             ->orderBy('id', 'desc')
@@ -1252,8 +1249,8 @@ class BookingController extends Controller
         // Booking find
         $booking = Booking::findOrFail($bookingId);
 
-        // Check if already delivered (status = 2)
-        if ($booking->status === 2) {
+        // Check if already delivered (status = 3)
+        if ($booking->status === 3) {
             return response()->json([
                 'success' => true,
                 'message' => 'Booking cannot be cancelled, it is already delivered.',
@@ -1263,6 +1260,16 @@ class BookingController extends Controller
             // Update booking status to 'cancel'
             $booking->booking_status = 'cancel';
             $booking->save();
+
+            // Set all cattle in this booking back to status 1
+            $cattleBookings = CattleBooking::where('booking_id', $booking->id)->get();
+            foreach ($cattleBookings as $cattleBooking) {
+                $cattle = Cattle::find($cattleBooking->cattle_id);
+                if ($cattle) {
+                    $cattle->status = 1;
+                    $cattle->save();
+                }
+            }
 
             return response()->json([
                 'success' => true,
@@ -1291,8 +1298,25 @@ class BookingController extends Controller
             ]);
         }
 
+        // Check if another booking with the same booking_number is already active
+        $alreadyActive = Booking::where('booking_number', $booking->booking_number)
+            ->where('id', '!=', $booking->id)
+            ->where('booking_status', 'active')
+            ->exists();
+
+        if ($alreadyActive) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot undo! Another booking with the same booking number (' . $booking->booking_number . ') is already active.',
+            ]);
+        }
+
         $booking->booking_status = 'active'; // undo cancel
         $booking->save();
+
+        // Set all related cattle status back to 2
+        $cattleIds = CattleBooking::where('booking_id', $booking->id)->pluck('cattle_id');
+        Cattle::whereIn('id', $cattleIds)->update(['status' => 2]);
 
         return response()->json([
             'success' => true,

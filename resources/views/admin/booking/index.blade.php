@@ -220,27 +220,48 @@
                 var bookingId = $(this).data('id');
                 var button = $(this);
 
-                if (!confirm('Are you sure you want to cancel this booking?')) return;
-
-                $.ajax({
-                    url: "{{ route('admin.booking.cancel') }}",
-                    method: 'POST',
-                    data: {
-                        booking_id: bookingId,
-                        _token: "{{ csrf_token() }}"
-                    },
-                    success: function(res) {
-                        if (res.success) {
-                            //     alert(res.message);
-                            // console.log(res.message);
-
-                            // Optional: change button text or color
-                            location.reload();
-
-                        }
-                    },
-                    error: function(err) {
-                        alert('Something went wrong!');
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: 'You want to cancel this booking?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Yes, Cancel it!',
+                    cancelButtonText: 'No'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: "{{ route('admin.booking.cancel') }}",
+                            method: 'POST',
+                            data: {
+                                booking_id: bookingId,
+                                _token: "{{ csrf_token() }}"
+                            },
+                            success: function(res) {
+                                if (res.success) {
+                                    iziToast.success({
+                                        title: 'Success',
+                                        message: res.message,
+                                        position: 'topRight'
+                                    });
+                                    location.reload();
+                                } else {
+                                    iziToast.error({
+                                        title: 'Error',
+                                        message: res.message,
+                                        position: 'topRight'
+                                    });
+                                }
+                            },
+                            error: function(err) {
+                                iziToast.error({
+                                    title: 'Error',
+                                    message: 'Something went wrong!',
+                                    position: 'topRight'
+                                });
+                            }
+                        });
                     }
                 });
             });
@@ -264,26 +285,48 @@
                 var button = $(this);
                 var bookingId = button.data('id');
 
-                if (!confirm('Are you sure you want to undo cancel?')) return;
-
-                $.ajax({
-                    url: "{{ route('admin.booking.undo') }}",
-                    type: 'POST',
-                    data: {
-                        booking_id: bookingId,
-                        _token: "{{ csrf_token() }}"
-                    },
-                    success: function(res) {
-                        if (res.success) {
-
-
-                            location.reload();
-                        } else {
-                            alert(res.message);
-                        }
-                    },
-                    error: function(err) {
-                        alert('Something went wrong!');
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: 'You want to undo this cancelled booking?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, Undo it!',
+                    cancelButtonText: 'No'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: "{{ route('admin.booking.undo') }}",
+                            type: 'POST',
+                            data: {
+                                booking_id: bookingId,
+                                _token: "{{ csrf_token() }}"
+                            },
+                            success: function(res) {
+                                if (res.success) {
+                                    iziToast.success({
+                                        title: 'Success',
+                                        message: res.message,
+                                        position: 'topRight'
+                                    });
+                                    location.reload();
+                                } else {
+                                    iziToast.error({
+                                        title: 'Error',
+                                        message: res.message,
+                                        position: 'topRight'
+                                    });
+                                }
+                            },
+                            error: function(err) {
+                                iziToast.error({
+                                    title: 'Error',
+                                    message: 'Something went wrong!',
+                                    position: 'topRight'
+                                });
+                            }
+                        });
                     }
                 });
             });
